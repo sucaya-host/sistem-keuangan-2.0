@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563EB">
+<link rel="apple-touch-icon" href="icon-192.png">
+
     <title>SmartFinance Pro | Enterprise Dashboard</title>
     
     <link rel="manifest" href="data:application/manifest+json,{'name':'SmartFinance Pro','short_name':'FinPro','start_url':'.','display':'standalone','background_color':'#ffffff','theme_color':'#6366f1','icons':[{'src':'https://cdn-icons-png.flaticon.com/512/584/584026.png','sizes':'512x512','type':'image/png'}]}">
@@ -240,6 +244,14 @@
         function resetData() { if(confirm('Hapus semua data?')) { db = []; refreshUI(); } }
 
         window.onload = () => { refreshUI(); initChart(); };
-    </script>
+    <script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./service-worker.js")
+    .then(() => console.log("PWA Registered ✅"))
+    .catch(err => console.log("SW Error", err));
+}
+</script>
+
 </body>
+
 </html>
