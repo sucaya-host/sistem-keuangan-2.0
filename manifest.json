@@ -1,0 +1,23 @@
+{
+  "name": "FinanceKit UMKM",
+  "short_name": "FinanceKit",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563EB",
+  "orientation": "portrait",
+  "description": "Smart Finance Dashboard untuk UMKM - PWA Version",
+
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
