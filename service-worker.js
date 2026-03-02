@@ -1,49 +1,31 @@
-const CACHE_NAME = "smartfinance-v1";
+const CACHE_NAME = "finpro-cache-v3";
 
-// Daftar asset yang akan disimpan agar aplikasi bisa jalan offline
-const assets = [
-  "/",
-  "/index.html",
-  "https://cdn.tailwindcss.com",
-  "https://cdn.jsdelivr.net/npm/chart.js",
-  "https://unpkg.com/lucide@latest"
+const FILES_TO_CACHE = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./icon-192.png",
+  "./icon-512.png"
 ];
 
-// Install Service Worker: Menyimpan assets ke cache
-self.addEventListener("install", (event) => {
+// Install
+self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log("Caching assets...");
-      return cache.addAll(assets);
-    })
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(FILES_TO_CACHE))
   );
+  self.skipWaiting();
 });
 
-// Activate: Membersihkan cache lama jika ada versi baru
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    })
-  );
-  self.clients.claim();
+// Activate
+self.addEventListener("activate", event => {
+  event.waitUntil(clients.claim());
 });
 
-// Fetch: Mengambil dari cache dulu, jika tidak ada baru ambil ke internet
-self.addEventListener("fetch", (event) => {
+// Fetch
+self.addEventListener("fetch", event => {
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request).then((networkResponse) => {
-        // Opsional: Simpan request baru ke cache secara dinamis
-        return caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
-        });
-      });
-    }).catch(() => {
-        // Jika offline dan tidak ada di cache, bisa arahkan ke halaman offline jika ada
-    })
+    caches.match(event.request)
+      .then(response => response || fetch(event.request))
   );
 });
