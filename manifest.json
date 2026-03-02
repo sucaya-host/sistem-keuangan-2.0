@@ -1,12 +1,12 @@
 {
-  "name": "FinanceKit UMKM",
-  "short_name": "FinanceKit",
-  "start_url": "./index.html",
+  "name": "SmartFinance Pro",
+  "short_name": "FinPro",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563EB",
   "orientation": "portrait",
-  "description": "Smart Finance Dashboard untuk UMKM - PWA Version",
+  "description": "Enterprise Finance Dashboard PWA",
 
   "icons": [
     {
