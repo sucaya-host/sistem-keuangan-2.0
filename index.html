@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFinance Pro | Enterprise Dashboard</title>
+    
+    <link rel="manifest" href="data:application/manifest+json,{'name':'SmartFinance Pro','short_name':'FinPro','start_url':'.','display':'standalone','background_color':'#ffffff','theme_color':'#6366f1','icons':[{'src':'https://cdn-icons-png.flaticon.com/512/584/584026.png','sizes':'512x512','type':'image/png'}]}">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .custom-card { background: white; border-radius: 2rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .chart-box { position: relative; height: 320px; width: 100%; }
+        .active-tab { background: #6366f1 !important; color: white !important; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased">
+
+    <div class="max-w-[1440px] mx-auto px-4 py-6">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+            <div class="flex items-center gap-4">
+                <div class="bg-indigo-600 p-3 rounded-2xl text-white shadow-lg shadow-indigo-200">
+                    <i data-lucide="layout-dashboard"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">FinPro <span class="text-indigo-600">Analytics</span></h1>
+                    <p id="realtime-clock" class="text-slate-500 font-mono text-sm tracking-widest uppercase"></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="exportToExcel()" class="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Ekspor Excel
+                </button>
+                <button onclick="resetData()" class="p-2.5 text-rose-500 bg-rose-50 rounded-xl hover:bg-rose-100 transition">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div class="custom-card p-6 bg-slate-900 text-white relative overflow-hidden">
+                <p class="text-slate-400 text-xs font-bold uppercase mb-2">Total Saldo (Net)</p>
+                <h2 id="balance-val" class="text-3xl font-bold tracking-tight">Rp 0</h2>
+                <i data-lucide="banknote" class="absolute -right-2 -bottom-2 w-20 h-20 opacity-10"></i>
+            </div>
+            <div class="custom-card p-6">
+                <p class="text-slate-400 text-xs font-bold uppercase mb-2">Pemasukan</p>
+                <h2 id="income-val" class="text-3xl font-bold text-emerald-600 tracking-tight">Rp 0</h2>
+            </div>
+            <div class="custom-card p-6 border-l-4 border-rose-500">
+                <p class="text-slate-400 text-xs font-bold uppercase mb-2">Pengeluaran</p>
+                <h2 id="expense-val" class="text-3xl font-bold text-rose-500 tracking-tight">Rp 0</h2>
+            </div>
+            <div class="custom-card p-6 bg-indigo-50 border-indigo-100">
+                <p class="text-indigo-400 text-xs font-bold uppercase mb-2">Profit Margin</p>
+                <h2 id="margin-val" class="text-3xl font-bold text-indigo-700 tracking-tight">0%</h2>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-4 space-y-8">
+                <div class="custom-card p-8">
+                    <h3 class="font-bold text-lg mb-6 flex items-center gap-2"><i data-lucide="plus" class="text-indigo-600"></i> Transaksi Baru</h3>
+                    <form id="finance-form" class="space-y-4">
+                        <input type="text" id="note" placeholder="Keterangan (Contoh: Gaji)" required class="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <input type="number" id="amount" placeholder="Nominal Rp" required class="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <div class="flex p-1 bg-slate-100 rounded-2xl">
+                            <button type="button" onclick="setType('in')" id="type-in" class="active-tab flex-1 py-3 rounded-xl font-bold transition">Masuk</button>
+                            <button type="button" onclick="setType('out')" id="type-out" class="flex-1 py-3 rounded-xl font-bold text-slate-500 transition">Keluar</button>
+                        </div>
+                        <button type="submit" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition">Simpan Sekarang</button>
+                    </form>
+                </div>
+
+                <div class="custom-card overflow-hidden">
+                    <div class="p-6 border-b border-slate-50 font-bold">Riwayat Real-time</div>
+                    <div id="tx-list" class="max-h-[400px] overflow-y-auto custom-scrollbar p-4 space-y-3"></div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-8">
+                <div class="custom-card p-8">
+                    <div class="flex justify-between items-center mb-8 flex-wrap gap-4">
+                        <h3 class="font-bold text-xl">Visualisasi Keuangan</h3>
+                        <div class="flex p-1 bg-slate-100 rounded-xl">
+                            <button onclick="toggleChart('line')" id="tab-line" class="active-tab px-4 py-2 rounded-lg text-xs font-bold transition">Garis</button>
+                            <button onclick="toggleChart('bar')" id="tab-bar" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-500 transition">Batang</button>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-box">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col md:flex-row items-center gap-6 shadow-xl">
+                    <div class="p-4 bg-white/10 rounded-3xl"><i data-lucide="info" class="w-8 h-8"></i></div>
+                    <div>
+                        <h4 class="font-bold text-lg">Auto-Save Active</h4>
+                        <p class="text-white/70 text-sm">Setiap data yang Anda masukkan disimpan secara otomatis di memori web browser Anda secara permanen hingga Anda menghapusnya.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('finpro_final_db')) || [];
+        let currentType = 'in';
+        let chartInstance;
+        let chartMode = 'line';
+
+        // 1. CLOCK REAL-TIME
+        function updateClock() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            document.getElementById('realtime-clock').innerText = now.toLocaleString('id-ID', options);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // 2. CHART LOGIC
+        function initChart() {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            const dataLabels = db.slice(0, 10).reverse().map(d => d.date);
+            const dataValues = db.slice(0, 10).reverse().map(d => d.amount);
+
+            if(chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: chartMode,
+                data: {
+                    labels: dataLabels,
+                    datasets: [{
+                        label: 'Aktivitas Rp',
+                        data: dataValues,
+                        borderColor: '#6366f1',
+                        backgroundColor: chartMode === 'line' ? 'rgba(99, 102, 241, 0.1)' : '#6366f1',
+                        fill: true,
+                        tension: 0.4,
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { border: {display: false}, grid: {color: '#f1f5f9'} },
+                        x: { grid: {display: false} }
+                    }
+                }
+            });
+        }
+
+        function toggleChart(mode) {
+            chartMode = mode;
+            document.getElementById('tab-line').className = mode === 'line' ? 'active-tab px-4 py-2 rounded-lg text-xs font-bold transition' : 'px-4 py-2 rounded-lg text-xs font-bold text-slate-500 transition';
+            document.getElementById('tab-bar').className = mode === 'bar' ? 'active-tab px-4 py-2 rounded-lg text-xs font-bold transition' : 'px-4 py-2 rounded-lg text-xs font-bold text-slate-500 transition';
+            initChart();
+        }
+
+        // 3. CORE LOGIC
+        function setType(type) {
+            currentType = type;
+            document.getElementById('type-in').className = type === 'in' ? 'active-tab flex-1 py-3 rounded-xl font-bold transition' : 'flex-1 py-3 rounded-xl font-bold text-slate-500 transition';
+            document.getElementById('type-out').className = type === 'out' ? 'active-tab flex-1 py-3 rounded-xl font-bold transition' : 'flex-1 py-3 rounded-xl font-bold text-slate-500 transition';
+        }
+
+        function refreshUI() {
+            const list = document.getElementById('tx-list');
+            list.innerHTML = '';
+            
+            let inc = 0, exp = 0;
+            db.forEach((t, i) => {
+                if(t.type === 'in') inc += t.amount; else exp += t.amount;
+                
+                const card = document.createElement('div');
+                card.className = "flex justify-between items-center p-4 bg-slate-50 rounded-2xl group";
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="${t.type === 'in' ? 'text-emerald-600' : 'text-rose-500'}"><i data-lucide="${t.type === 'in' ? 'arrow-up-circle' : 'arrow-down-circle'}"></i></div>
+                        <div>
+                            <p class="font-bold text-sm text-slate-700">${t.note}</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">${t.fullDate}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-sm ${t.type === 'in' ? 'text-emerald-600' : 'text-rose-600'}">Rp${t.amount.toLocaleString()}</span>
+                        <button onclick="delTx(${i})" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            document.getElementById('income-val').innerText = `Rp ${inc.toLocaleString()}`;
+            document.getElementById('expense-val').innerText = `Rp ${exp.toLocaleString()}`;
+            document.getElementById('balance-val').innerText = `Rp ${(inc - exp).toLocaleString()}`;
+            document.getElementById('margin-val').innerText = inc > 0 ? `${(((inc - exp) / inc) * 100).toFixed(1)}%` : '0%';
+            
+            localStorage.setItem('finpro_final_db', JSON.stringify(db));
+            lucide.createIcons();
+            initChart();
+        }
+
+        document.getElementById('finance-form').onsubmit = (e) => {
+            e.preventDefault();
+            const now = new Date();
+            db.unshift({
+                note: document.getElementById('note').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                type: currentType,
+                date: now.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}),
+                fullDate: now.toLocaleString('id-ID')
+            });
+            refreshUI();
+            e.target.reset();
+        };
+
+        // 4. EXPORT EXCEL (CSV)
+        function exportToExcel() {
+            let csv = "Keterangan,Jumlah,Tipe,Waktu\n";
+            db.forEach(t => {
+                csv += `${t.note},${t.amount},${t.type === 'in' ? 'Pemasukan' : 'Pengeluaran'},${t.fullDate}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `Laporan_Keuangan_${new Date().toLocaleDateString()}.csv`);
+            a.click();
+        }
+
+        function delTx(i) { db.splice(i, 1); refreshUI(); }
+        function resetData() { if(confirm('Hapus semua data?')) { db = []; refreshUI(); } }
+
+        window.onload = () => { refreshUI(); initChart(); };
+    </script>
+</body>
+</html>
